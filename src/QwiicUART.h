@@ -18,41 +18,51 @@
 
 
 // these registers are always accessible
-#define SC16IS741A_LCR 0x03
-#define SC16IS741A_TXLVL 0x08
-#define SC16IS741A_RXLVL 0x09
-#define SC16IS741A_UART_RESET 0x0E
-#define SC16IS741A_EFCR 0x0F
+#define SC16IS741A_LCR        0x18  // 0x03 << 3  R/W
+#define SC16IS741A_TXLVL      0x40  // 0x08 << 3  R
+#define SC16IS741A_RXLVL      0x48  // 0x09 << 3  R
+#define SC16IS741A_UART_RESET 0x70  // 0x0E << 3  R/W
+#define SC16IS741A_EFCR       0x78  // 0x0F << 3  R/W
 
-// only accessible when LCR[7] != 1
-#define SC16IS741A_RHR 0x00
-#define SC16IS741A_THR 0x00
-#define SC16IS741A_IER 0x01
+// only accessible when
+// LCR[7] != 1
+#define SC16IS741A_RHR        0x00  // 0x00 << 3  R
+#define SC16IS741A_THR        0x00  // 0x00 << 3  W
+#define SC16IS741A_IER        0x08  // 0x01 << 3  R/W
 
-// only accessible when LCR != 0xBF
-#define SC16IS741A_FCR 0x02
-#define SC16IS741A_IIR 0x02
-#define SC16IS741A_MCR 0x04
-#define SC16IS741A_LSR 0x05
+// only accessible when
+// LCR != 0xBF
+#define SC16IS741A_FCR        0x10  // 0x02 << 3  W
+#define SC16IS741A_IIR        0x10  // 0x02 << 3  R
+#define SC16IS741A_MCR        0x20  // 0x04 << 3  R/W
+#define SC16IS741A_LSR        0x28  // 0x05 << 3  R
 
-// only accessible when LCR != 0xBF and MCR[2] = 0
-#define SC16IS741A_MSR 0x06
-#define SC16IS741A_SPR 0x07
+// only accessible when
+// LCR != 0xBF (0b10111111) and
+// MCR[2] = 0
+#define SC16IS741A_MSR        0x30  // 0x06 << 3
+#define SC16IS741A_SPR        0x38  // 0x07 << 3
 
-// only accessible when LCR != 0xBF and MCR[2] = 1 and EFR[4] = 1
-#define SC16IS741A_TCR 0x06
-#define SC16IS741A_TLR 0x07
+// only accessible when
+// LCR != 0xBF (0b10111111) and
+// MCR[2] = 1 and
+// EFR[4] = 1
+#define SC16IS741A_TCR        0x30  // 0x06 << 3
+#define SC16IS741A_TLR        0x38  // 0x07 << 3
 
-// only accessible when LCR[7] = 1 but LCR != 0xBF
-#define SC16IS741A_DLL 0x00
-#define SC16IS741A_DLH 0x01
+// only accessible when
+// LCR[7] = 1 and
+// LCR != 0xBF (0b10111111)
+#define SC16IS741A_DLL        0x00  // 0x00 << 3
+#define SC16IS741A_DLH        0x08  // 0x01 << 3
 
-// only accessible when LCR = 0xBF
-#define SC16IS741A_EFR 0x02
-#define SC16IS741A_XON1 0x04
-#define SC16IS741A_XON2 0x05
-#define SC16IS741A_XOFF1 0x06
-#define SC16IS741A_XOFF2 0x07
+// only accessible when
+// LCR = 0xBF (0b10111111)
+#define SC16IS741A_EFR        0x10  // 0x02 << 3
+#define SC16IS741A_XON1       0x20  // 0x04 << 3
+#define SC16IS741A_XON2       0x28  // 0x05 << 3
+#define SC16IS741A_XOFF1      0x30  // 0x06 << 3
+#define SC16IS741A_XOFF2      0x38  // 0x07 << 3
 
 // some bits can only be written to when EFR[4] = 1
 // when exiting a function:
@@ -77,15 +87,17 @@ enum QwiicUARTFlowCtrlMode {
 
 class QwiicUART : public Stream {
   public:
-    QwiicUART(TwoWire& wire = Wire, uint8_t address = 0x90);
+    QwiicUART(TwoWire& wire = Wire, uint8_t address = 0x48);
     void begin(unsigned long baud, uint32_t config = SERIAL_8N1);
     void end();
-    operator bool();
+    //operator bool();
 
-    bool setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode = UART_HW_FLOWCTRL_CTS_RTS, uint8_t threshold = 32);
+    /*
+    bool setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode = UART_HW_FLOWCTRL_CTS_RTS);
     bool setMode(QwiicUARTMode mode);
     bool digitalReadCts();
     void digitalWriteRts(bool value);
+    */
 
     virtual int available();
     virtual int read();
@@ -108,7 +120,8 @@ class QwiicUART : public Stream {
     uint8_t _peekedChar;
 
     int16_t _readRegister(uint8_t reg);
-    uint8_t _writeRegister(uint8_t reg, uint8_t value);
+    //uint8_t _writeRegister(uint8_t reg, uint8_t value);
+    void _writeRegister(uint8_t reg, uint8_t value);
 
 };
 

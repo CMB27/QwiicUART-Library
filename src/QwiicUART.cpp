@@ -41,15 +41,15 @@ void QwiicUART::begin(unsigned long baud, uint32_t config) {
     case SERIAL_8O2: lcrValue = 0b00001111; break;
   }
   
-  if (_writeRegister(SC16IS741A_UART_RESET, 0b00001000) != 1) return;                 // reset the uart
-  if (_writeRegister(SC16IS741A_LCR, 0b10011101) != 1) return;                        // enable setting the divisor
-  if (_writeRegister(SC16IS741A_DLL, lowByte((uint16_t)clockDivisor)) != 1) return;   // set the low byte of the divisor
-  if (_writeRegister(SC16IS741A_DLH, highByte((uint16_t)clockDivisor)) != 1) return;  // set the high byte of the divisor
-  if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return;                              // disable setting the divisor and enable the enhanced features register
-  if (_writeRegister(SC16IS741A_EFR, 0b00010000) != 1) return;                        // enable enhanced functions
-  if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return;                          // disable the enhanced features register and set the configuration
-  if (_writeRegister(SC16IS741A_IER, 0b00010001) != 1) return;                        // enable sleep mode and rx data available interrupt
-  if (_writeRegister(SC16IS741A_FCR, 0b00000111) != 1) return;                        // clear and enable the fifo buffers
+  _writeRegister(SC16IS741A_UART_RESET, 0b00001000);                // reset the uart
+  _writeRegister(SC16IS741A_LCR, 0b10011101);                       // enable setting the divisor
+  _writeRegister(SC16IS741A_DLL, lowByte((uint16_t)clockDivisor));  // set the low byte of the divisor
+  _writeRegister(SC16IS741A_DLH, highByte((uint16_t)clockDivisor)); // set the high byte of the divisor
+  _writeRegister(SC16IS741A_LCR, 0xBF);                             // disable setting the divisor and enable the enhanced features register
+  _writeRegister(SC16IS741A_EFR, 0b00010000);                       // enable enhanced functions
+  _writeRegister(SC16IS741A_LCR, lcrValue);                         // disable the enhanced features register and set the configuration
+  _writeRegister(SC16IS741A_IER, 0b00010001);                       // enable sleep mode and rx data available interrupt
+  _writeRegister(SC16IS741A_FCR, 0b00000111);                       // clear and enable the fifo buffers
   delayMicroseconds(QWIIC_UART_2TCLK_MICROS);
 
   _setupFlag = true;
@@ -60,7 +60,8 @@ void QwiicUART::end() {
   _setupFlag = false;
 }
 
-operator QwiicUART::bool() {
+/*
+bool QwiicUART::operator() {
   if (!_setupFlag) return false;
   uint8_t value = random(0, 255);
   if (_writeRegister(SC16IS741A_SPR, value) != 1) return false;
@@ -69,9 +70,10 @@ operator QwiicUART::bool() {
   if ((uint8_t)sprValue != value) return false;
   return true;
 }
+*/
 
 
-
+/*
 bool QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode) {
   int16_t lcrValue = _readRegister(SC16IS741A_LCR);
   if (lcrValue < 0) return false;
@@ -79,7 +81,7 @@ bool QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode) {
   if (mcrValue < 0) return false;
 
   switch (mode) {
-    default:
+    //default:
     case UART_HW_FLOWCTRL_DISABLE:
       if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
       if (_writeRegister(SC16IS741A_EFR, 0b00010000) != 1) return false;
@@ -117,10 +119,11 @@ bool QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode) {
 }
 
 bool QwiicUART::setMode(QwiicUARTMode mode) {
+  int16_t mcrValue;
   switch (mode) {
-    default:
+    //default:
     case UART_MODE_UART:
-      int16_t mcrValue = _readRegister(SC16IS741A_MCR);
+      mcrValue = _readRegister(SC16IS741A_MCR);
       if (mcrValue < 0) return false;
       if (_writeRegister(SC16IS741A_MCR, mcrValue & ~(0b10000000)) != 1) return false;
       if (_writeRegister(SC16IS741A_EFCR, 0b00000000) != 1) return false;
@@ -130,7 +133,7 @@ bool QwiicUART::setMode(QwiicUARTMode mode) {
       if (_writeRegister(SC16IS741A_EFCR, 0b00110000) != 1) return false;
       break;
     case UART_MODE_IRDA:
-      int16_t mcrValue = _readRegister(SC16IS741A_MCR);
+      mcrValue = _readRegister(SC16IS741A_MCR);
       if (mcrValue < 0) return false;
       if (_writeRegister(SC16IS741A_MCR, mcrValue | 0b10000000) != 1) return false;
       break;
@@ -150,6 +153,7 @@ void QwiicUART::digitalWriteRts(bool value) {
   bitWrite(mcrValue, 1, !value);
   _writeRegister(SC16IS741A_MCR, mcrValue);
 }
+*/
 
 
 
@@ -194,7 +198,7 @@ int QwiicUART::availableForWrite() {
 
 void QwiicUART::flush() {
   while(true) {
-    uint16_t lsrValue = _readRegister(SC16IS741A_LSR);
+    int16_t lsrValue = _readRegister(SC16IS741A_LSR);
     if (lsrValue < 0) return;
     if (bitRead((uint8_t)lsrValue, 5)) return;
   }
@@ -202,26 +206,47 @@ void QwiicUART::flush() {
 
 size_t QwiicUART::write(uint8_t value) {
   while (!availableForWrite());
-  return _writeRegister(SC16IS741A_THR, value);
+  _writeRegister(SC16IS741A_THR, value);
+  return 1;
 }
 
 
 
 int16_t QwiicUART::_readRegister(uint8_t reg) {
   _wire.beginTransmission(_address);
-  _wire.write(reg << 3);
+  _wire.write(reg);
   uint8_t error = _wire.endTransmission(false);
   if (error) return -1;
-  if (_wire.requestFrom(_address, 1) != 1) return -1;
+  if (_wire.requestFrom(_address, (uint8_t)1) != 1) return -1;
   if (!_wire.available()) return -1;
   return _wire.read();
 }
 
-uint8_t QwiicUART::_writeRegister(uint8_t reg, uint8_t value) {
+void QwiicUART::_writeRegister(uint8_t reg, uint8_t value) {
   _wire.beginTransmission(_address);
-  _wire.write(reg << 3);
+  _wire.write(reg);
   _wire.write(value);
-  error = _wire.endTransmission();
-  if (error) return 0;
-  else return 1;
+  _wire.endTransmission();
 }
+
+/*
+uint8_t QwiicUART::_writeRegister(uint8_t reg, uint8_t value) {
+  uint8_t attemptCount = 0;
+  while (true) {
+    attemptCount++;
+    _wire.beginTransmission(_address);
+    _wire.write(reg << 3);
+    _wire.write(value);
+    uint8_t error = _wire.endTransmission();
+    if (error) {
+      Serial.print("_writeRegister attemptCount: ");
+      Serial.print(attemptCount);
+      Serial.print(" error: ");
+      Serial.println(error);
+      if (attemptCount >= 10) return 0;
+      //return 0;
+    }
+    else return 1;
+  }
+}
+*/
