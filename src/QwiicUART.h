@@ -13,7 +13,6 @@
 
 #define QWIIC_UART_CLK 1843200
 #define QWIIC_UART_MAX_BAUD (QWIIC_UART_CLK / 16)
-#define QWIIC_UART_2TCLK_MICROS ((2000000 + (QWIIC_UART_CLK - 1)) / QWIIC_UART_CLK)
 
 
 
@@ -65,10 +64,6 @@
 #define SC16IS741A_XOFF2      0x38  // 0x07 << 3
 
 // some bits can only be written to when EFR[4] = 1
-// when exiting a function:
-// EFR[4] = 1
-// MCR[2] = 0
-// LCR[7] = 0
 
 
 
@@ -115,12 +110,11 @@ class QwiicUART : public Stream {
   private:
     TwoWire& _wire;
     uint8_t _address;
-    bool _setupFlag = false;
     bool _peekedFlag = false;
     uint8_t _peekedChar;
 
+    int16_t _readChar();
     int16_t _readRegister(uint8_t reg);
-    //uint8_t _writeRegister(uint8_t reg, uint8_t value);
     void _writeRegister(uint8_t reg, uint8_t value);
 
 };

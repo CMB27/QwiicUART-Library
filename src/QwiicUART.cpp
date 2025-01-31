@@ -5,8 +5,6 @@ QwiicUART::QwiicUART(TwoWire& wire, uint8_t address) : _wire(wire) {
 }
 
 void QwiicUART::begin(unsigned long baud, uint32_t config) {
-  _setupFlag = false;
-
   // calulate the best divisor for the requested baud rate
   if (baud > QWIIC_UART_MAX_BAUD) baud = QWIIC_UART_MAX_BAUD;
   unsigned long clockDivisor = (QWIIC_UART_MAX_BAUD + (baud / 2)) / baud;
@@ -45,19 +43,14 @@ void QwiicUART::begin(unsigned long baud, uint32_t config) {
   _writeRegister(SC16IS741A_LCR, 0b10011101);                       // enable setting the divisor
   _writeRegister(SC16IS741A_DLL, lowByte((uint16_t)clockDivisor));  // set the low byte of the divisor
   _writeRegister(SC16IS741A_DLH, highByte((uint16_t)clockDivisor)); // set the high byte of the divisor
-  _writeRegister(SC16IS741A_LCR, 0xBF);                             // disable setting the divisor and enable the enhanced features register
-  _writeRegister(SC16IS741A_EFR, 0b00010000);                       // enable enhanced functions
-  _writeRegister(SC16IS741A_LCR, lcrValue);                         // disable the enhanced features register and set the configuration
-  _writeRegister(SC16IS741A_IER, 0b00010001);                       // enable sleep mode and rx data available interrupt
-  _writeRegister(SC16IS741A_FCR, 0b00000111);                       // clear and enable the fifo buffers
-  delayMicroseconds(QWIIC_UART_2TCLK_MICROS);
-
-  _setupFlag = true;
+  _writeRegister(SC16IS741A_LCR, lcrValue);                         // disable setting the divisor and set the configuration
+  _writeRegister(SC16IS741A_IER, 0b00000001);                       // enable rx data available interrupt
+  _writeRegister(SC16IS741A_FCR, 0b00000001);                       // enable the fifo buffers
 }
 
 void QwiicUART::end() {
+  flush();
   _writeRegister(SC16IS741A_UART_RESET, 0b00001000);
-  _setupFlag = false;
 }
 
 /*
@@ -170,18 +163,12 @@ int QwiicUART::read() {
     _peekedFlag = false;
     return _peekedChar;
   }
-  int16_t lsrValue = _readRegister(SC16IS741A_LSR);
-  if (lsrValue < 0) return -1;
-  if (bitRead(lsrValue, 0) == false) return -1;
-  return _readRegister(SC16IS741A_RHR);
+  return _readChar();
 }
 
 int QwiicUART::peek() {
   if (_peekedFlag) return _peekedChar;
-  int16_t lsrValue = _readRegister(SC16IS741A_LSR);
-  if (lsrValue < 0) return -1;
-  if (bitRead(lsrValue, 0) == false) return -1;
-  int16_t rhrValue = _readRegister(SC16IS741A_RHR);
+  int16_t rhrValue = _readChar();
   if (rhrValue < 0) return -1;
   _peekedChar = rhrValue;
   _peekedFlag = true;
@@ -199,8 +186,7 @@ int QwiicUART::availableForWrite() {
 void QwiicUART::flush() {
   while(true) {
     int16_t lsrValue = _readRegister(SC16IS741A_LSR);
-    if (lsrValue < 0) return;
-    if (bitRead((uint8_t)lsrValue, 5)) return;
+    if (lsrValue >= 0 && bitRead((uint8_t)lsrValue, 6)) return;
   }
 }
 
@@ -212,13 +198,18 @@ size_t QwiicUART::write(uint8_t value) {
 
 
 
+int16_t QwiicUART::_readChar() {
+  int16_t lsrValue = _readRegister(SC16IS741A_LSR);
+  if (lsrValue < 0) return -1;
+  if (!bitRead(lsrValue, 0)) return -1;
+  return _readRegister(SC16IS741A_RHR);
+}
+
 int16_t QwiicUART::_readRegister(uint8_t reg) {
   _wire.beginTransmission(_address);
   _wire.write(reg);
-  uint8_t error = _wire.endTransmission(false);
-  if (error) return -1;
-  if (_wire.requestFrom(_address, (uint8_t)1) != 1) return -1;
-  if (!_wire.available()) return -1;
+  _wire.endTransmission(false);
+  _wire.requestFrom(_address, (uint8_t)1);
   return _wire.read();
 }
 
