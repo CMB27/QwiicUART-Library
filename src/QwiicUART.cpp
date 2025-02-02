@@ -39,101 +39,55 @@ void QwiicUART::begin(unsigned long baud, uint32_t config) {
     case SERIAL_8O2: lcrValue = 0b00001111; break;
   }
   
-  _writeRegister(SC16IS741A_UART_RESET, 0b00001000);                // reset the uart
-  _writeRegister(SC16IS741A_LCR, 0b10011101);                       // enable setting the divisor
-  _writeRegister(SC16IS741A_DLL, lowByte((uint16_t)clockDivisor));  // set the low byte of the divisor
-  _writeRegister(SC16IS741A_DLH, highByte((uint16_t)clockDivisor)); // set the high byte of the divisor
-  _writeRegister(SC16IS741A_LCR, lcrValue);                         // disable setting the divisor and set the configuration
-  _writeRegister(SC16IS741A_IER, 0b00000001);                       // enable rx data available interrupt
-  _writeRegister(SC16IS741A_FCR, 0b00000001);                       // enable the fifo buffers
+  _reset();                                                               // software reset
+  _writeRegister(_LCR, 0b10011101);                                       // enable setting the divisor
+  _writeRegister(_getRegAddress(_DLL), lowByte((uint16_t)clockDivisor));  // set the low byte of the divisor
+  _writeRegister(_getRegAddress(_DLH), highByte((uint16_t)clockDivisor)); // set the high byte of the divisor
+  _writeRegister(_LCR, lcrValue);                                         // disable setting the divisor and set the configuration
+  _writeRegister(_IER, 0b00000001);                                       // enable rx data available interrupt
+  _writeRegister(_FCR, 0b00000001);                                       // enable the fifo buffers
 }
 
 void QwiicUART::end() {
   flush();
-  _writeRegister(SC16IS741A_UART_RESET, 0b00001000);
+  _reset();
 }
 
-/*
-bool QwiicUART::operator() {
-  if (!_setupFlag) return false;
-  uint8_t value = random(0, 255);
-  if (_writeRegister(SC16IS741A_SPR, value) != 1) return false;
-  int16_t sprValue = _readRegister(SC16IS741A_SPR);
-  if (sprValue < 0) return false;
-  if ((uint8_t)sprValue != value) return false;
-  return true;
-}
-*/
 
 
-/*
-bool QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode) {
-  int16_t lcrValue = _readRegister(SC16IS741A_LCR);
-  if (lcrValue < 0) return false;
-  int16_t mcrValue = _readRegister(SC16IS741A_MCR);
-  if (mcrValue < 0) return false;
-
+void QwiicUART::setMode(QwiicUARTMode mode) {
   switch (mode) {
-    //default:
-    case UART_HW_FLOWCTRL_DISABLE:
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b00010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      break;
-    case UART_HW_FLOWCTRL_RTS:
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b00010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue | 0b00000100) != 1) return false;
-      if (_writeRegister(SC16IS741A_TCR, 0x79) != 1) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b01010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      break;
-    case UART_HW_FLOWCTRL_CTS:
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b10010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      break;
-    case UART_HW_FLOWCTRL_CTS_RTS:
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b00010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue | 0b00000100) != 1) return false;
-      if (_writeRegister(SC16IS741A_TCR, 0x79) != 1) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, 0xBF) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFR, 0b11010000) != 1) return false;
-      if (_writeRegister(SC16IS741A_LCR, lcrValue) != 1) return false;
-      break;
-  }
-  return true;
-}
-
-bool QwiicUART::setMode(QwiicUARTMode mode) {
-  int16_t mcrValue;
-  switch (mode) {
-    //default:
     case UART_MODE_UART:
-      mcrValue = _readRegister(SC16IS741A_MCR);
-      if (mcrValue < 0) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue & ~(0b10000000)) != 1) return false;
-      if (_writeRegister(SC16IS741A_EFCR, 0b00000000) != 1) return false;
+      _writeRegister(_EFCR, 0b00000000);
       break;
     case UART_MODE_RS485_HALF_DUPLEX:
-      if (setHwFlowCtrlMode(UART_HW_FLOWCTRL_DISABLE) == false) return false;
-      if (_writeRegister(SC16IS741A_EFCR, 0b00110000) != 1) return false;
-      break;
-    case UART_MODE_IRDA:
-      mcrValue = _readRegister(SC16IS741A_MCR);
-      if (mcrValue < 0) return false;
-      if (_writeRegister(SC16IS741A_MCR, mcrValue | 0b10000000) != 1) return false;
+      setHwFlowCtrlMode(UART_HW_FLOWCTRL_DISABLE);
+      _writeRegister(_EFCR, 0b00110000);
       break;
   }
-  return true;
 }
 
+void QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode, uint8_t threshold) {
+  uint8_t efrValue = _readRegister(_EFR);
+  switch (mode) {
+    case UART_HW_FLOWCTRL_DISABLE:
+      _writeRegister(_EFR, efrValue & 0b00111111);
+      break;
+    case UART_HW_FLOWCTRL_RTS:
+      _writeRegister(_TCR, constrain((threshold + 2) / 4, 0x01, 0x0F));      
+      _writeRegister(_EFR, (efrValue & 0b01111111) | 0b01000000);
+      break;
+    case UART_HW_FLOWCTRL_CTS:
+      _writeRegister(_EFR, (efrValue & 0b10111111) | 0b10000000);
+      break;
+    case UART_HW_FLOWCTRL_CTS_RTS:
+      _writeRegister(_TCR, constrain((threshold + 2) / 4, 0x01, 0x0F));      
+      _writeRegister(_EFR, efrValue | 0b11000000);
+      break;
+  }
+}
+
+/*
 bool QwiicUART::digitalReadCts() {
   int16_t msrValue = _readRegister(SC16IS741A_MSR);
   if (msrValue < 0) return false;
@@ -152,7 +106,7 @@ void QwiicUART::digitalWriteRts(bool value) {
 
 
 int QwiicUART::available() {
-  int16_t rxlvlValue = _readRegister(SC16IS741A_RXLVL);
+  int16_t rxlvlValue = _readRegister(_RXLVL);
   if (rxlvlValue < 0) rxlvlValue = 0;
   if (_peekedFlag) return rxlvlValue + 1;
   return rxlvlValue;
@@ -178,66 +132,172 @@ int QwiicUART::peek() {
 
 
 int QwiicUART::availableForWrite() {
-  int16_t txlvlValue = _readRegister(SC16IS741A_TXLVL);
+  int16_t txlvlValue = _readRegister(_TXLVL);
   if (txlvlValue < 0) return 0;
   return txlvlValue;
 }
 
 void QwiicUART::flush() {
   while(true) {
-    int16_t lsrValue = _readRegister(SC16IS741A_LSR);
+    int16_t lsrValue = _readRegister(_LSR);
     if (lsrValue >= 0 && bitRead((uint8_t)lsrValue, 6)) return;
   }
 }
 
 size_t QwiicUART::write(uint8_t value) {
   while (!availableForWrite());
-  _writeRegister(SC16IS741A_THR, value);
+  _writeRegister(_THR, value);
   return 1;
 }
 
 
 
 int16_t QwiicUART::_readChar() {
-  int16_t lsrValue = _readRegister(SC16IS741A_LSR);
+  int16_t lsrValue = _readRegister(_LSR);
   if (lsrValue < 0) return -1;
   if (!bitRead(lsrValue, 0)) return -1;
-  return _readRegister(SC16IS741A_RHR);
+  return _readRegister(_RHR);
 }
 
-int16_t QwiicUART::_readRegister(uint8_t reg) {
+void QwiicUART::_reset() {
+  _writeRegister(_RESET, 0b00001000);
+}
+
+
+
+int16_t QwiicUART::_readRegister(_Reg reg) {
+  int16_t value = -1;
+  uint8_t regAddress = _getRegAddress(reg);
+  switch (reg) {
+    case _RHR:
+    case _IER:
+    case _IIR:
+    case _LCR:
+    case _MCR:
+    case _LSR:
+    case _MSR:
+    case _TXLVL:
+    case _RXLVL:
+    case _RESET:
+    case _EFCR:
+      value = _readRegister(regAddress);
+      break;
+    case _TCR:
+    case _TLR:
+      {
+        uint8_t efrValue = _readRegister(_EFR);
+        uint8_t mcrValue = _readRegister(_MCR);
+        _writeRegister(_EFR, efrValue | (1 << 4));
+        _writeRegister(_MCR, mcrValue | (1 << 2));
+        value = _readRegister(regAddress);
+        _writeRegister(_MCR, mcrValue & ~(1 << 4));
+        _writeRegister(_EFR, efrValue & ~(1 << 2));
+      }
+      break;
+    case _EFR:
+    case _XON1:
+    case _XON2:
+    case _XOFF1:
+    case _XOFF2:
+      {
+        uint8_t lcrValue = _readRegister(_LCR);
+        _writeRegister(_LCR, 0xBF);
+        value = _readRegister(regAddress);
+        _writeRegister(_LCR, lcrValue & ~(1 << 7));
+      }
+      break;
+    default:
+      break;
+  }
+  return value;
+}
+
+void QwiicUART::_writeRegister(_Reg reg, uint8_t value) {
+  uint8_t regAddress = _getRegAddress(reg);
+  switch (reg) {
+    case _THR:
+    case _IER:
+    case _FCR:
+    case _LCR:
+    case _MCR:
+    case _SPR:
+    case _RESET:
+    case _EFCR:
+      _writeRegister(regAddress, value);
+      break;
+    case _TCR:
+    case _TLR:
+      {
+        uint8_t efrValue = _readRegister(_EFR);
+        uint8_t mcrValue = _readRegister(_MCR);
+        _writeRegister(_EFR, efrValue | (1 << 4));
+        _writeRegister(_MCR, mcrValue | (1 << 2));
+        _writeRegister(regAddress, value);
+        _writeRegister(_MCR, mcrValue & ~(1 << 4));
+        _writeRegister(_EFR, efrValue & ~(1 << 2));
+      }
+      break;
+    case _EFR:
+    case _XON1:
+    case _XON2:
+    case _XOFF1:
+    case _XOFF2:
+      {
+        uint8_t lcrValue = _readRegister(_LCR);
+        _writeRegister(_LCR, 0xBF);
+        _writeRegister(regAddress, value);
+        _writeRegister(_LCR, lcrValue & ~(1 << 7));
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+
+
+uint8_t QwiicUART::_getRegAddress(_Reg reg) {
+  switch (reg) {
+    default:
+    case _RHR:
+    case _THR:
+    case _DLL: return 0x00; // 0x00 << 3
+    case _IER:
+    case _DLH: return 0x08; // 0x01 << 3
+    case _FCR:
+    case _IIR:
+    case _EFR: return 0x10; // 0x02 << 3
+    case _LCR: return 0x18; // 0x03 << 3
+    case _MCR:
+    case _XON1: return 0x20; // 0x04 << 3
+    case _LSR:
+    case _XON2: return 0x28; // 0x05 << 3
+    case _MSR:
+    case _TCR:
+    case _XOFF1: return 0x30; // 0x06 << 3
+    case _SPR:
+    case _TLR:
+    case _XOFF2: return 0x38; // 0x07 << 3
+    case _TXLVL: return 0x40; // 0x08 << 3
+    case _RXLVL: return 0x48; // 0x09 << 3
+    case _RESET: return 0x70; // 0x0E << 3
+    case _EFCR: return 0x78; // 0x0F << 3
+  }
+}
+
+
+
+int16_t QwiicUART::_readRegister(uint8_t regAddress) {
   _wire.beginTransmission(_address);
-  _wire.write(reg);
+  _wire.write(regAddress);
   _wire.endTransmission(false);
   _wire.requestFrom(_address, (uint8_t)1);
   return _wire.read();
 }
 
-void QwiicUART::_writeRegister(uint8_t reg, uint8_t value) {
+void QwiicUART::_writeRegister(uint8_t regAddress, uint8_t value) {
   _wire.beginTransmission(_address);
-  _wire.write(reg);
+  _wire.write(regAddress);
   _wire.write(value);
   _wire.endTransmission();
 }
-
-/*
-uint8_t QwiicUART::_writeRegister(uint8_t reg, uint8_t value) {
-  uint8_t attemptCount = 0;
-  while (true) {
-    attemptCount++;
-    _wire.beginTransmission(_address);
-    _wire.write(reg << 3);
-    _wire.write(value);
-    uint8_t error = _wire.endTransmission();
-    if (error) {
-      Serial.print("_writeRegister attemptCount: ");
-      Serial.print(attemptCount);
-      Serial.print(" error: ");
-      Serial.println(error);
-      if (attemptCount >= 10) return 0;
-      //return 0;
-    }
-    else return 1;
-  }
-}
-*/

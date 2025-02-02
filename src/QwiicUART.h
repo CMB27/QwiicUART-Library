@@ -15,7 +15,7 @@
 #define QWIIC_UART_MAX_BAUD (QWIIC_UART_CLK / 16)
 
 
-
+/*
 // these registers are always accessible
 #define SC16IS741A_LCR        0x18  // 0x03 << 3  R/W
 #define SC16IS741A_TXLVL      0x40  // 0x08 << 3  R
@@ -64,14 +64,16 @@
 #define SC16IS741A_XOFF2      0x38  // 0x07 << 3
 
 // some bits can only be written to when EFR[4] = 1
-
+*/
 
 
 enum QwiicUARTMode {
   UART_MODE_UART,
-  UART_MODE_RS485_HALF_DUPLEX,
-  UART_MODE_IRDA
+  UART_MODE_RS485_HALF_DUPLEX
 };
+// I would like to add UART_MODE_IRDA in future.
+// I don't currently have the equipment to test this mode.
+
 
 enum QwiicUARTFlowCtrlMode {
   UART_HW_FLOWCTRL_DISABLE,
@@ -85,14 +87,11 @@ class QwiicUART : public Stream {
     QwiicUART(TwoWire& wire = Wire, uint8_t address = 0x48);
     void begin(unsigned long baud, uint32_t config = SERIAL_8N1);
     void end();
-    //operator bool();
 
-    /*
-    bool setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode = UART_HW_FLOWCTRL_CTS_RTS);
-    bool setMode(QwiicUARTMode mode);
-    bool digitalReadCts();
-    void digitalWriteRts(bool value);
-    */
+    void setMode(QwiicUARTMode mode);
+    void setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode = UART_HW_FLOWCTRL_CTS_RTS, uint8_t threshold = 32);
+    //bool digitalReadCts();
+    //void digitalWriteRts(bool value);
 
     virtual int available();
     virtual int read();
@@ -106,16 +105,51 @@ class QwiicUART : public Stream {
     inline size_t write(unsigned int n) { return write((uint8_t)n); }
     inline size_t write(int n) { return write((uint8_t)n); }
     using Print::write;
-
+    
   private:
+  enum _Reg {
+      _RHR,
+      _THR,
+      _IER,
+      _FCR,
+      _IIR,
+      _LCR,
+      _MCR,
+      _LSR,
+      _MSR,
+      _SPR,
+      _TCR,
+      _TLR,
+      _TXLVL,
+      _RXLVL,
+      _RESET,
+      _EFCR,
+      _DLL,
+      _DLH,
+      _EFR,
+      _XON1,
+      _XON2,
+      _XOFF1,
+      _XOFF2
+    };
+
     TwoWire& _wire;
     uint8_t _address;
     bool _peekedFlag = false;
     uint8_t _peekedChar;
 
     int16_t _readChar();
-    int16_t _readRegister(uint8_t reg);
-    void _writeRegister(uint8_t reg, uint8_t value);
+    void _reset();
+    
+    int16_t _readRegister(_Reg reg);
+    void _writeRegister(_Reg reg, uint8_t value);
+    
+    uint8_t _getRegAddress(_Reg reg);
+
+    int16_t _readRegister(uint8_t regAddress);
+    void _writeRegister(uint8_t regAddress, uint8_t value);
+
+    
 
 };
 
