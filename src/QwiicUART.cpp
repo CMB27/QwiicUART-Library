@@ -44,8 +44,8 @@ void QwiicUART::begin(unsigned long baud, uint32_t config) {
   _writeRegister(_getRegAddress(_DLL), lowByte((uint16_t)clockDivisor));  // set the low byte of the divisor
   _writeRegister(_getRegAddress(_DLH), highByte((uint16_t)clockDivisor)); // set the high byte of the divisor
   _writeRegister(_LCR, lcrValue);                                         // disable setting the divisor and set the configuration
-  _writeRegister(_IER, 0b00000001);                                       // enable rx data available interrupt
   _writeRegister(_FCR, 0b00000001);                                       // enable the fifo buffers
+  _writeRegister(_IER, 0b00000001);                                       // enable rx data available interrupt
 }
 
 void QwiicUART::end() {
@@ -87,21 +87,18 @@ void QwiicUART::setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode, uint8_t threshold)
   }
 }
 
-/*
 bool QwiicUART::digitalReadCts() {
-  int16_t msrValue = _readRegister(SC16IS741A_MSR);
+  int16_t msrValue = _readRegister(_MSR);
   if (msrValue < 0) return false;
   return !bitRead(msrValue, 4);
 }
 
 void QwiicUART::digitalWriteRts(bool value) {
-  int16_t mcrValue = _readRegister(SC16IS741A_MCR);
+  int16_t mcrValue = _readRegister(_MCR);
   if (mcrValue < 0) return;
   bitWrite(mcrValue, 1, !value);
-  _writeRegister(SC16IS741A_MCR, mcrValue);
+  _writeRegister(_MCR, mcrValue);
 }
-*/
-
 
 
 
