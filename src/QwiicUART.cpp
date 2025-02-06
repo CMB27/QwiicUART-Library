@@ -147,6 +147,27 @@ size_t QwiicUART::write(uint8_t value) {
   return 1;
 }
 
+size_t QwiicUART::write(const uint8_t *buffer, size_t size) {
+  size_t i = 0;
+  while (i < size) {
+    uint8_t txlvlValue;
+    while (true) {
+      txlvlValue = availableForWrite();
+      if (txlvlValue >= (size - i) || txlvlValue >= 60) break;
+    }
+    uint8_t j = 0;
+    _wire.beginTransmission(_address);
+    _wire.write(_getRegAddress(_THR));
+    while (j < txlvlValue && i < size) {
+      if (_wire.write(buffer[i]) == 0) break;
+      j++;
+      i++;
+    }
+    _wire.endTransmission();
+  }
+  return i;
+}
+
 
 
 int16_t QwiicUART::_readChar() {
