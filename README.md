@@ -295,7 +295,7 @@ The function terminates if it times out (see `setTimeout()`).
 ### Parameters
 - `qSerial`: a `QwiicUART` serial port object.
 - `lookahead`: the mode used to look ahead in the stream for a floating point number. Allowed data types: `LookaheadMode`. Allowed values:
-  - `SKIP_ALL`: all characters other than a minus sign, decimal point, or digits are ignored when scanning the stream for a floating point number. This is the default mode.
+  - `SKIP_ALL`: All characters other than a minus sign, decimal point, or digits are ignored when scanning the stream for a floating point number. This is the default mode.
   - `SKIP_NONE`: Nothing is skipped, and the stream is not touched unless the first waiting character is valid.
   - `SKIP_WHITESPACE`: Only tabs, spaces, line feeds, and carriage returns are skipped.
 - `ignore`: used to skip the indicated char in the search. Used for example to skip thousands divider. Allowed data types: `char`
@@ -305,3 +305,304 @@ Data type: `float`.
 
   </blockquote>
 </details>
+
+
+
+<details><summary id="parseInt"><strong>parseInt()</strong></summary>
+  <blockquote>
+
+### Description
+Looks for the next valid integer in the incoming serial. The function terminates if it times out (see `setTimeout()`).
+
+`parseInt()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+In particular:
+
+- Parsing stops when no characters have been read for a configurable time-out value, or a non-digit is read;
+- If no valid digits were read when the time-out (see `setTimeout()`) occurs, 0 is returned;
+
+### Syntax
+- `qSerial.parseInt()`
+- `qSerial.parseInt(lookahead)`
+- `qSerial.parseInt(lookahead, ignore)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `lookahead`: the mode used to look ahead in the stream for an integer. Allowed data types: `LookaheadMode`. Allowed values:
+  - `SKIP_ALL`: All characters other than digits or a minus sign are ignored when scanning the stream for an integer. This is the default mode.
+  - `SKIP_NONE`: Nothing is skipped, and the stream is not touched unless the first waiting character is valid.
+  - `SKIP_WHITESPACE`: Only tabs, spaces, line feeds, and carriage returns are skipped.
+- `ignore`: used to skip the indicated char in the search. Used for example to skip thousands divider. Allowed data types: `char`
+
+### Returns
+The next valid integer. Data type: `long`.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="peek"><strong>peek()</strong></summary>
+  <blockquote>
+
+### Description
+Returns the next byte (character) of incoming serial data without removing it from the internal serial buffer.
+That is, successive calls to `peek()` will return the same character, as will the next call to `read()`.
+
+`peek()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.peek()`
+
+### Parameters
+`qSerial`: a `QwiicUART` serial port object.
+
+### Returns
+The first byte of incoming serial data available (or -1 if no data is available). Data type: `int`.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="print"><strong>print()</strong></summary>
+  <blockquote>
+
+### Description
+Prints data to the serial port as human-readable ASCII text.
+This command can take many forms. Numbers are printed using an ASCII character for each digit.
+Floats are similarly printed as ASCII digits, defaulting to two decimal places.
+Bytes are sent as a single character.
+Characters and strings are sent as is.
+For example-
+
+- `qSerial.print(78)` gives "78"
+- `qSerial.print(1.23456)` gives "1.23"
+- `qSerial.print('N')` gives "N"
+- `qSerial.print("Hello world.")` gives "Hello world."
+
+An optional second parameter specifies the base (format) to use; permitted values are `BIN(binary, or base 2)`, `OCT(octal, or base 8)`, `DEC(decimal, or base 10)`, `HEX(hexadecimal, or base 16)`.
+For floating point numbers, this parameter specifies the number of decimal places to use.
+For example:
+
+- `qSerial.print(78, BIN)` gives "1001110"
+- `qSerial.print(78, OCT)` gives "116"
+- `qSerial.print(78, DEC)` gives "78"
+- `qSerial.print(78, HEX)` gives "4E"
+- `qSerial.print(1.23456, 0)` gives "1"
+- `qSerial.print(1.23456, 2)` gives "1.23"
+- `qSerial.print(1.23456, 4)` gives "1.2346"
+
+To send data without conversion to its representation as characters, use `write()`.
+
+### Syntax
+- `qSerial.print(value)`
+- `qSerial.print(value, format)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `value`: the value to print. Allowed data types: any data type.
+- `format`: specifies the number base (for integral data types) or number of decimal places (for floating point types).
+
+### Returns
+The number of bytes written, though reading that number is optional. Data type: `size_t`.
+
+### Example
+``` C++
+/*
+  Uses a for loop to print numbers in various formats.
+*/
+
+# include <QwiicUART.h>
+
+QwiicUART qSerial;
+
+void setup() {
+  Wire.begin();
+  qSerial.begin(9600);
+}
+
+void loop() {
+  // print labels
+  qSerial.print("NO FORMAT");  // prints a label
+  qSerial.print("\t");         // prints a tab
+
+  qSerial.print("DEC");
+  qSerial.print("\t");
+
+  qSerial.print("HEX");
+  qSerial.print("\t");
+
+  qSerial.print("OCT");
+  qSerial.print("\t");
+
+  qSerial.print("BIN");
+  qSerial.println();        // carriage return after the last label
+
+  for (int x = 0; x < 64; x++) { // only part of the ASCII chart, change to suit
+    // print it out in many formats:
+    qSerial.print(x);       // print as an ASCII-encoded decimal - same as "DEC"
+    qSerial.print("\t\t");  // prints two tabs to accomodate the label length
+
+    qSerial.print(x, DEC);  // print as an ASCII-encoded decimal
+    qSerial.print("\t");    // prints a tab
+
+    qSerial.print(x, HEX);  // print as an ASCII-encoded hexadecimal
+    qSerial.print("\t");    // prints a tab
+
+    qSerial.print(x, OCT);  // print as an ASCII-encoded octal
+    qSerial.print("\t");    // prints a tab
+
+    qSerial.println(x, BIN);  // print as an ASCII-encoded binary
+    // then adds the carriage return with "println"
+    delay(200);            // delay 200 milliseconds
+  }
+  qSerial.println();        // prints another carriage return
+}
+```
+
+> [!NOTE]
+> QwiicUART "Serial" transmission is asynchronous.
+> Depending on the baud rate and I<sup>2</sup>C clock, `print()` may return before all the characters are transmitted.
+> If the transmit buffer/FIFO is full then `print()` will block until there is enough space in the buffer.
+> To avoid blocking calls to `print()`, you can first check the amount of free space in the transmit buffer using `availableForWrite()`.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="println"><strong>println()</strong></summary>
+  <blockquote>
+
+### Description
+Prints data to the serial port as human-readable ASCII text followed by a carriage return character (ASCII 13, or '\r') and a newline character (ASCII 10, or '\n').
+This command takes the same forms as `print()`.
+
+### Syntax
+- `qSerial.println(value)`
+- `qSerial.println(value, format)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `value`: the value to print. Allowed data types: any data type.
+- `format`: specifies the number base (for integral data types) or number of decimal places (for floating point types).
+
+### Returns
+The number of bytes written, though reading that number is optional. Data type: `size_t`.
+
+### Example
+``` C++
+/*
+  Analog input reads an analog input on analog in 0, prints the value out.
+  Created: 2026-03-24
+  By: Tom Igoe
+  Adapted for QwiicUART on: 2025-02-12
+  By: C. M. Bulliner
+*/
+
+# include <QwiicUART.h>
+
+QwiicUART qSerial;
+
+int analogValue = 0;    // variable to hold the analog value
+
+void setup() {
+  Wire.begin();
+  qSerial.begin(9600);
+}
+
+void loop() {
+  // read the analog input on pin 0:
+  analogValue = analogRead(0);
+
+  // print it out in many formats:
+  qSerial.println(analogValue);       // print as an ASCII-encoded decimal
+  qSerial.println(analogValue, DEC);  // print as an ASCII-encoded decimal
+  qSerial.println(analogValue, HEX);  // print as an ASCII-encoded hexadecimal
+  qSerial.println(analogValue, OCT);  // print as an ASCII-encoded octal
+  qSerial.println(analogValue, BIN);  // print as an ASCII-encoded binary
+
+  // delay 10 milliseconds before the next reading:
+  delay(10);
+}
+```
+
+> [!NOTE]
+> QwiicUART "Serial" transmission is asynchronous.
+> Depending on the baud rate and I<sup>2</sup>C clock, `println()` may return before all the characters are transmitted.
+> If the transmit buffer/FIFO is full then `println()` will block until there is enough space in the buffer.
+> To avoid blocking calls to `println()`, you can first check the amount of free space in the transmit buffer using `availableForWrite()`.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="read"><strong>read()</strong></summary>
+  <blockquote>
+
+### Description
+Reads incoming serial data.
+
+`read()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.read()`
+
+### Parameters
+`qSerial`: a `QwiicUART` serial port object.
+
+### Returns
+The first byte of incoming serial data available (or -1 if no data is available). Data type: `int`.
+
+### Example
+``` C++
+# include <QwiicUART.h>
+
+QwiicUART qSerial;
+
+int incomingByte = 0; // for incoming serial data
+
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+  qSerial.begin(9600);
+}
+
+void loop() {
+  // send data only when you receive data:
+  if (qSerial.available() > 0) {
+    // read the incoming byte:
+    incomingByte = qSerial.read();
+
+    // say what you got:
+    Serial.print("I received: ");
+    Serial.println(incomingByte, DEC);
+  }
+}
+```
+
+  </blockquote>
+</details>
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Legal Stuff
+Much of the documentation in this README was shamelessly copied from the [Arduino Docs Language Reference](https://docs.arduino.cc/language-reference/), particularly from the [Serial](https://docs.arduino.cc/language-reference/en/functions/communication/serial/) section.  
+This is legal, provided:
+- I give Arduino apprpriate credit, which I think I just did
+- Note if any changes were made, which there were
+- And if I distribute this README that it be under the same license as the Arduino Documentation, which is the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/)
+
+Therefore, even though the source code of this library is distributed under the [MIT license](LICENSE), this README is distributed under the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
