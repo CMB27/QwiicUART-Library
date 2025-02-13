@@ -588,21 +588,241 @@ void loop() {
 
 
 
+<details><summary id="readBytes"><strong>readBytes()</strong></summary>
+  <blockquote>
+
+### Description
+Reads characters from the serial port into a buffer. The function terminates if the determined length has been read, or it times out (see `setTimeout()`).
+
+`readBytes()` returns the number of characters placed in the buffer. A 0 means no valid data was found.
+
+`readBytes()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.readBytes(buffer, length)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `buffer`: the buffer to store the bytes in. Allowed data types: array of `char` or `byte`.
+- `length`: the number of bytes to read. Allowed data types: `int`.
+
+### Returns
+The number of bytes placed in the buffer. Data type: `size_t`.
+
+  </blockquote>
+</details>
 
 
 
+<details><summary id="readBytesUntil"><strong>readBytesUntil()</strong></summary>
+  <blockquote>
+
+### Description
+Reads characters from the serial buffer into an array.
+The function terminates (checks being done in this order) if the determined length has been read, if it times out (see Serial.setTimeout()), or if the terminator character is detected (in which case the function returns the characters up to the last character before the supplied terminator).
+The terminator itself is not returned in the buffer.
+
+`readBytesUntil()` returns the number of characters read into the buffer. A 0 means that the length parameter <= 0, a time out occurred before any other input, or a termination character was found before any other input.
+
+`readBytesUntil()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.readBytesUntil(character, buffer, length)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `character`: the character to search for. Allowed data types: `char`.
+- `buffer`: the buffer to store the bytes in. Allowed data types: array of `char` or `byte`.
+- `length`: the number of bytes to read. Allowed data types: `int`.
+
+### Returns
+Data type: `size_t`.
+
+> [!NOTE]
+> The terminator character is discarded from the serial buffer, unless the number of characters read and copied into the buffer equals `length`.
+
+  </blockquote>
+</details>
 
 
 
+<details><summary id="readString"><strong>readString()</strong></summary>
+  <blockquote>
 
+### Description
+Reads characters from the serial buffer into a [`String`](https://docs.arduino.cc/language-reference/en/variables/data-types/stringObject/).
+The function terminates if it times out (see `setTimeout()`).
+
+`readString()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.readString()`
+
+### Parameters
+`qSerial`: a `QwiicUART` serial port object.
+
+### Returns
+A `String` read from the serial buffer
+
+### Example
+``` C++
+# include <QwiicUART.h>
+
+QwiicUART qSerial;
+
+void setup() {
+  Wire.begin();
+  qSerial.begin(9600);
+}
+
+void loop() {
+  qSerial.println("Enter data:");
+  while (qSerial.available() == 0) {}     //wait for data available
+  String teststr = qSerial.readString();  //read until timeout
+  teststr.trim();                         // remove any \r \n whitespace at the end of the String
+  if (teststr == "red") {
+    qSerial.println("A primary color");
+  } else {
+    qSerial.println("Something else");
+  }
+}
+```
+
+> [!NOTE]
+> The function does not terminate early if the data contains end of line characters.
+> The returned `String` may contain carriage return and/or line feed characters if they were received.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="readStringUntil"><strong>readStringUntil()</strong></summary>
+  <blockquote>
+
+### Description
+Reads characters from the serial buffer into a String. The function terminates if it times out (see `setTimeout()`).
+
+`readStringUntil()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.readStringUntil(terminator)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `terminator`: the character to search for. Allowed data types: `char`.
+
+### Returns
+The entire `String` read from the serial buffer, up to the terminator character.
+If the terminator character can’t be found, or if there is no data before the terminator character, it will return `NULL`.
+
+> [!NOTE]
+> The terminator character is discarded from the serial buffer.
+> If the terminator character can’t be found, all read characters will be discarded.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="setTimeout"><strong>setTimeout()</strong></summary>
+  <blockquote>
+
+### Description
+Sets the maximum milliseconds to wait for serial data. It defaults to 1000 milliseconds.
+
+`setTimeout()` inherits from the [Stream](https://docs.arduino.cc/language-reference/en/functions/communication/stream/) utility class.
+
+### Syntax
+`qSerial.setTimeout(time)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `time`: timeout duration in milliseconds. Allowed data types: `long`.
+
+> [!NOTE]
+> QwiicUART functions that use the timeout value set via `setTimeout()`:
+> - `find()`
+> - `findUntil()`
+> - `parseInt()`
+> - `parseFloat()`
+> - `readBytes()`
+> - `readBytesUntil()`
+> - `readString()`
+> - `readStringUntil()`
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="print"><strong>print()</strong></summary>
+  <blockquote>
+
+### Description
+Writes binary data to the serial port.
+This data is sent as a byte or series of bytes; to send the characters representing the digits of a number use the `print()` function instead.
+
+### Syntax
+- `qSerial.write(value)`
+- `qSerial.write(string)`
+- `qSerial.write(buffer, length)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `value`: a value to send as a single byte.
+- `string`: a string to send as a series of bytes.
+- `buffer`: an array to send as a series of bytes.
+- `length`: the number of bytes to be sent from the array.
+
+### Returns
+The number of bytes written, though reading that number is optional. Data type: `size_t`.
+
+### Example
+``` C++
+/*
+  Uses a for loop to print numbers in various formats.
+*/
+
+# include <QwiicUART.h>
+
+QwiicUART qSerial;
+
+void setup() {
+  Wire.begin();
+  qSerial.begin(9600);
+}
+
+void loop() {
+  qSerial.write(45); // send a byte with the value 45
+
+  int bytesSent = qSerial.write("hello");  //send the string "hello" and return the length of the string.
+}
+```
+
+> [!NOTE]
+> QwiicUART "Serial" transmission is asynchronous.
+> Depending on the baud rate and I<sup>2</sup>C clock, `write()` may return before all the characters are transmitted.
+> If the transmit buffer/FIFO is full then `write()` will block until there is enough space in the buffer.
+> To avoid blocking calls to `write()`, you can first check the amount of free space in the transmit buffer using `availableForWrite()`.
+
+  </blockquote>
+</details>
 
 
 
 ## Legal Stuff
 Much of the documentation in this README was shamelessly copied from the [Arduino Docs Language Reference](https://docs.arduino.cc/language-reference/), particularly from the [Serial](https://docs.arduino.cc/language-reference/en/functions/communication/serial/) section.  
 This is legal, provided:
-- I give Arduino apprpriate credit, which I think I just did
-- Note if any changes were made, which there were
-- And if I distribute this README that it be under the same license as the Arduino Documentation, which is the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/)
+- Arduino is given apprpriate credit
+- It is noteed if any changes were made
+- And this README is distributed under the same license as the Arduino documentation
 
-Therefore, even though the source code of this library is distributed under the [MIT license](LICENSE), this README is distributed under the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
+As already noted, much of the content of this README was was copied from Arduino's documentation.
+This copied content is in the Methods section of this README.
+
+Numerous changes were made to the copied text.
+Most of these were made to adapt it to this library, some were stylistic.
+
+The source code of this library is distributed under the [MIT license](LICENSE).
+However in order to comply with the requirements stated above, this README is distributed under the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
