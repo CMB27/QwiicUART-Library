@@ -35,7 +35,7 @@ class QwiicUART : public Stream {
     void end();
 
     void setMode(QwiicUARTMode mode);
-    void setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode = UART_HW_FLOWCTRL_CTS_RTS, uint8_t threshold = 32);
+    void setHwFlowCtrlMode(QwiicUARTFlowCtrlMode mode, uint8_t threshold = 32);
     bool digitalReadCts();
     void digitalWriteRts(bool value);
 

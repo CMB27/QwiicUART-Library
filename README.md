@@ -4,7 +4,9 @@ This is an Arduino library to utilize the NXP SC16IS741 as a hardware serial por
 
 
 ## QwiicUART Board
+This library is designed to be used with the [QwiicUART breakout board](https://github.com/CMB27/QwiicUART-Board).
 
+![QwiicUART-Board](https://github.com/CMB27/QwiicUART-Board/blob/main/extras/QwiicUART-Board_Front_Picture.jpg)
 
 
 ## Examples
@@ -184,6 +186,46 @@ void loop() {}
 > |           4 |     28800 |
 > |           5 |     23040 |
 > |           6 |     19200 |
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="digitalReadCts"><strong>digitalReadCts()</strong></summary>
+  <blockquote>
+
+### Description
+Reads the value from the CTS pin.
+
+### Syntax
+`qSerial.digitalReadCts()`
+
+### Parameters
+`qSerial`: a `QwiicUART` serial port object.
+
+### Returns
+`HIGH` or `LOW`
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="digitalWriteRts"><strong>digitalWriteRts()</strong></summary>
+  <blockquote>
+
+### Description
+Write a `HIGH` or `LOW` value to the RTS pin.
+
+`HIGH` being 3.3V and `LOW` being 0V.
+
+### Syntax
+`qSerial.digitalReadCts(value)`
+
+### Parameters
+`qSerial`: a `QwiicUART` serial port object.
+`value`: `HIGH` or `LOW`
 
   </blockquote>
 </details>
@@ -725,6 +767,63 @@ If the terminator character can’t be found, or if there is no data before the 
 
 
 
+<details><summary id="setHwFlowCtrlMode"><strong>setHwFlowCtrlMode()</strong></summary>
+  <blockquote>
+
+### Description
+Sets the usage of the RTS and CTS pins.
+
+The RTS pin is an output.
+When enabled as a flow control, it will be set `LOW` until the number of bytes in the receiving buffer exceeds the threshold, then it will be set `HIGH`.
+It will be set `LOW` agian when the receiving buffer is empty.
+
+The CTS pin is an input.
+When enabled as a flow control, the UART will only transmit when this pin is `LOW`.
+
+### Syntax
+- `qSerial.setHwFlowCtrlMode(mode)`
+- `qSerial.setHwFlowCtrlMode(mode, threshold)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `mode`: sets flow control mode. Valid values are:
+  - `UART_HW_FLOWCTRL_DISABLE`
+  - `UART_HW_FLOWCTRL_RTS`
+  - `UART_HW_FLOWCTRL_CTS`
+  - `UART_HW_FLOWCTRL_CTS_RTS`
+- `threshold`: sets how full the receiving buffer needs to be before setting the RTS pin `HIGH`. Min value: 4. Max value: 60, default value: 32.
+
+  </blockquote>
+</details>
+
+
+
+<details><summary id="setMode"><strong>setMode()</strong></summary>
+  <blockquote>
+
+### Description
+Sets the operating mode of the UART.
+
+When set to `UART_MODE_UART`, the UART will act as a normal UART serial port.
+
+When set to `UART_MODE_RS485_HALF_DUPLEX`, the UART will set the RTS pin high whenever it is transmtting.
+This is useful when working with a half-duplex RS-485 tranceiver.
+Typically these transceivers will require a driver enable `DE` control.
+
+### Syntax
+`qSerial.setMode(mode)`
+
+### Parameters
+- `qSerial`: a `QwiicUART` serial port object.
+- `mode`: sets flow control mode. Valid values are:
+  - `UART_MODE_UART`
+  - `UART_MODE_RS485_HALF_DUPLEX`
+
+  </blockquote>
+</details>
+
+
+
 <details><summary id="setTimeout"><strong>setTimeout()</strong></summary>
   <blockquote>
 
@@ -811,18 +910,9 @@ void loop() {
 
 
 
-## Legal Stuff
-Much of the documentation in this README was shamelessly copied from the [Arduino Docs Language Reference](https://docs.arduino.cc/language-reference/), particularly from the [Serial](https://docs.arduino.cc/language-reference/en/functions/communication/serial/) section.  
-This is legal, provided:
-- Arduino is given apprpriate credit
-- It is noteed if any changes were made
-- And this README is distributed under the same license as the Arduino documentation
+---
 
-As already noted, much of the content of this README was was copied from Arduino's documentation.
-This copied content is in the Methods section of this README.
-
-Numerous changes were made to the copied text.
-Most of these were made to adapt it to this library, some were stylistic.
+Much of the documentation in this README is based on the [Arduino Docs Language Reference](https://docs.arduino.cc/language-reference/), particularly from the [Serial](https://docs.arduino.cc/language-reference/en/functions/communication/serial/) section. Modifications were made.
 
 The source code of this library is distributed under the [MIT license](LICENSE).
-However in order to comply with the requirements stated above, this README is distributed under the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
+However this README is distributed under the [Creative Commons Attribution Share Alike 4.0 license](https://creativecommons.org/licenses/by-sa/4.0/).
